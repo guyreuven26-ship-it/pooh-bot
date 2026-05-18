@@ -544,6 +544,94 @@ export function getRandomColor() {
 
 export default botConfig;
 
+const { 
+  Client, 
+  GatewayIntentBits, 
+  EmbedBuilder, 
+  ActionRowBuilder, 
+  StringSelectMenuBuilder 
+} = require("discord.js");
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages
+  ]
+});
+
+// 💰 XP DB פשוט (אפשר אחר כך לשדרג ל-JSON/DB)
+const userXP = new Map();
+
+// 🛒 חנות רולים
+const shopItems = [
+  { label: "VIP", value: "vip", price: 100, roleId: "ROLE_ID_1" },
+  { label: "MVP", value: "mvp", price: 200, roleId: "ROLE_ID_2" },
+  { label: "LEGEND", value: "legend", price: 500, roleId: "ROLE_ID_3" }
+];
+
+client.once("ready", async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+
+  const channel = await client.channels.fetch("XP_SHOP_CHANNEL_ID");
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("shop_menu")
+    .setPlaceholder("🛒 בחר רול לקנייה")
+    .addOptions(
+      shopItems.map(item => ({
+        label: `${item.label} - ${item.price} XP`,
+        value: item.value
+      }))
+    );
+
+  const row = new ActionRowBuilder().addComponents(menu);
+
+  const embed = new EmbedBuilder()
+    .setTitle("🛒 XP SHOP")
+    .setDescription("בחר רול מהתפריט למטה וקנה אותו עם XP")
+    .setColor("Gold");
+
+  await channel.send({ embeds: [embed], components: [row] });
+});
+
+// 🎯 אינטראקציות
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  if (interaction.customId === "shop_menu") {
+    const selected = shopItems.find(i => i.value === interaction.values[0]);
+    if (!selected) return;
+
+    const userId = interaction.user.id;
+
+    // אם אין XP - מתחילים מ-0
+    if (!userXP.has(userId)) userXP.set(userId, 300); // אפשר לשנות התחלה
+
+    let xp = userXP.get(userId);
+
+    // ❌ אין מספיק XP
+    if (xp < selected.price) {
+      return interaction.reply({
+        content: `❌ אין לך מספיק XP! חסר לך ${selected.price - xp} XP`,
+        ephemeral: true
+      });
+    }
+
+    // ✅ יש מספיק XP
+    xp -= selected.price;
+    userXP.set(userId, xp);
+
+    // נותן רול
+    const member = await interaction.guild.members.fetch(userId);
+    await member.roles.add(selected.roleId);
+
+    return interaction.reply({
+      content: `✅ הרכישה בוצעה בהצלחה!\n💰 נשאר לך ${xp} XP`,
+      ephemeral: true
+    });
+  }
+});
 
 
 
