@@ -545,5 +545,106 @@ export function getRandomColor() {
 export default botConfig;
 
 
+const { 
+  Client, 
+  GatewayIntentBits, 
+  EmbedBuilder, 
+  ActionRowBuilder, 
+  StringSelectMenuBuilder 
+} = require("discord.js");
 
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages
+  ]
+});
+
+// 💰 XP בסיסי (אפשר לשדרג למסד נתונים)
+const userXP = new Map();
+
+// 🛒 חנות הרולים שלך
+const shopItems = [
+  {
+    label: "POOH STARTING",
+    value: "pooh_starting",
+    price: 50,
+    roleId: "1505545274544885812"
+  },
+  {
+    label: "POOH IDOL",
+    value: "pooh_idol",
+    price: 100,
+    roleId: "1505565625886703646"
+  },
+  {
+    label: "LEGENDARY POOH",
+    value: "legendary_pooh",
+    price: 500,
+    roleId: "1505549219895836725"
+  }
+];
+
+client.once("ready", async () => {
+  console.log(`Logged in as ${client.user.tag}`);
+
+  const channel = await client.channels.fetch("1505785649226186873");
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId("shop_menu")
+    .setPlaceholder("🛒 בחר רול לקנייה")
+    .addOptions(
+      shopItems.map(item => ({
+        label: `${item.label} - ${item.price} XP`,
+        value: item.value
+      }))
+    );
+
+  const row = new ActionRowBuilder().addComponents(menu);
+
+  const embed = new EmbedBuilder()
+    .setTitle("🛒 XP SHOP")
+    .setDescription("בחר רול מהתפריט וקנה אותו עם XP")
+    .setColor("Gold");
+
+  await channel.send({ embeds: [embed], components: [row] });
+});
+
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isStringSelectMenu()) return;
+
+  if (interaction.customId === "shop_menu") {
+    const selected = shopItems.find(i => i.value === interaction.values[0]);
+    if (!selected) return;
+
+    const userId = interaction.user.id;
+
+    if (!userXP.has(userId)) userXP.set(userId, 300);
+
+    let xp = userXP.get(userId);
+
+    // ❌ אין מספיק XP
+    if (xp < selected.price) {
+      return interaction.reply({
+        content: `❌ אין לך מספיק XP! חסר לך ${selected.price - xp} XP`,
+        ephemeral: true
+      });
+    }
+
+    // ✅ קנייה הצליחה
+    xp -= selected.price;
+    userXP.set(userId, xp);
+
+    const member = await interaction.guild.members.fetch(userId);
+    await member.roles.add(selected.roleId);
+
+    return interaction.reply({
+      content: `✅ הרכישה בוצעה בהצלחה!\n💰 נשאר לך ${xp} XP`,
+      ephemeral: true
+    });
+  }
+});
+
+client.login("YOUR_BOT_TOKEN");
 
