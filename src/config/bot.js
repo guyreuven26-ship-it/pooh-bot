@@ -544,6 +544,178 @@ export function getRandomColor() {
 
 export default botConfig;
 
+const {
+  Client,
+  GatewayIntentBits,
+  EmbedBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  Events
+} = require('discord.js');
 
+const client = new Client({
+  intents: [GatewayIntentBits.Guilds]
+});
+
+client.once(Events.ClientReady, () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+});
+
+/*
+━━━━━━━━━━━━━━━━━━━━━━
+💾 מערכת XP לדוגמה
+━━━━━━━━━━━━━━━━━━━━━━
+כאן אתה משנה XP ידנית לבדיקה
+*/
+
+const userXP = {
+  // userId: xp
+};
+
+/*
+━━━━━━━━━━━━━━━━━━━━━━
+🛒 שליחת חנות
+━━━━━━━━━━━━━━━━━━━━━━
+*/
+
+client.on(Events.InteractionCreate, async interaction => {
+
+  if (!interaction.isChatInputCommand()) return;
+
+  if (interaction.commandName === 'shop') {
+
+    // XP לבדיקה
+    userXP[interaction.user.id] = 200000;
+
+    const embed = new EmbedBuilder()
+      .setColor('#2b2d31')
+      .setTitle('🛒 חנות הרולים')
+      .setDescription('בחר רול מהתפריט למטה:')
+      .addFields(
+        {
+          name: '1. @pooh starting',
+          value: '💰 15,000 XP'
+        },
+        {
+          name: '2. @Legendary pooh',
+          value: '💰 75,000 XP'
+        },
+        {
+          name: '3. @pooh idol',
+          value: '💰 150,000 XP'
+        }
+      );
+
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId('xp_shop')
+      .setPlaceholder('🛍️ בחר רול לקנייה...')
+      .addOptions([
+        {
+          label: 'pooh starting',
+          value: 'pooh_starting',
+          description: '15,000 XP',
+          emoji: '🌱'
+        },
+        {
+          label: 'Legendary pooh',
+          value: 'legendary_pooh',
+          description: '75,000 XP',
+          emoji: '🔥'
+        },
+        {
+          label: 'pooh idol',
+          value: 'pooh_idol',
+          description: '150,000 XP',
+          emoji: '👑'
+        }
+      ]);
+
+    const row = new ActionRowBuilder().addComponents(menu);
+
+    await interaction.reply({
+      embeds: [embed],
+      components: [row]
+    });
+  }
+
+  /*
+  ━━━━━━━━━━━━━━━━━━━━━━
+  🛒 קניית רולים
+  ━━━━━━━━━━━━━━━━━━━━━━
+  */
+
+  if (interaction.isStringSelectMenu()) {
+
+    if (interaction.customId !== 'xp_shop') return;
+
+    const member = interaction.member;
+
+    let roleName;
+    let rolePrice;
+
+    if (interaction.values[0] === 'pooh_starting') {
+      roleName = 'pooh starting';
+      rolePrice = 15000;
+    }
+
+    if (interaction.values[0] === 'legendary_pooh') {
+      roleName = 'Legendary pooh';
+      rolePrice = 75000;
+    }
+
+    if (interaction.values[0] === 'pooh_idol') {
+      roleName = 'pooh idol';
+      rolePrice = 150000;
+    }
+
+    const currentXP = userXP[interaction.user.id] || 0;
+
+    /*
+    ❌ אין מספיק XP
+    */
+
+    if (currentXP < rolePrice) {
+
+      return interaction.reply({
+        content:
+`❌ אין לך מספיק XP לקנות את הרול הזה!
+
+💰 ה־XP שלך: ${currentXP}
+🛒 מחיר הרול: ${rolePrice}`,
+        ephemeral: true
+      });
+    }
+
+    /*
+    ✅ יש מספיק XP
+    */
+
+    userXP[interaction.user.id] -= rolePrice;
+
+    const role = interaction.guild.roles.cache.find(
+      r => r.name === roleName
+    );
+
+    if (!role) {
+      return interaction.reply({
+        content: '❌ הרול לא נמצא בשרת.',
+        ephemeral: true
+      });
+    }
+
+    await member.roles.add(role);
+
+    interaction.reply({
+      content:
+`✅ הרכישה בוצעה בהצלחה!
+
+🎭 קיבלת את הרול: ${role.name}
+💰 XP שנשאר לך: ${userXP[interaction.user.id]}`,
+      ephemeral: true
+    });
+  }
+});
+
+client.login('TOKEN_HERE');
 
 
