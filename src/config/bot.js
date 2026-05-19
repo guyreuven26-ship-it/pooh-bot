@@ -544,6 +544,50 @@ export function getRandomColor() {
 
 export default botConfig;
 
-
+const shop = [
+  {
+    name: "POOH STARTING",
+    price: 15000,
+    roleId: "1505545274544885812",
+    emoji: "🌟",
+    customId: "buy_starting"
+  },
+  {
+    name: "POOH IDOL",
+    price: 75000,
+    roleId: "1505565625886703646",
+    emoji: "💎",
+    customId: "buy_idol"
+  },
+  {
+    name: "LEGENDARY POOH",
+    price: 135000,
+    roleId: "1505549219895836725",
+    emoji: "✨",
+    customId: "buy_legendary"
+  }
+];const shop = [
+  {
+    name: "POOH STARTING",
+    price: 15000,
+    roleId: "1505545274544885812",
+    emoji: "🌟",
+    customId: "buy_starting"
+  },
+  {
+    name: "POOH IDOL",
+    price: 75000,
+    roleId: "1505565625886703646",
+    emoji: "💎",
+    customId: "buy_idol"
+  },
+  {
+    name: "LEGENDARY POOH",
+    price: 135000,
+    roleId: "1505549219895836725",
+    emoji: "✨",
+    customId: "buy_legendary"
+  }
+];
 
 
